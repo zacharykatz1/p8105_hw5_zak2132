@@ -9,8 +9,8 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 # Load packages
 library(tidyverse)
-library(lubridate)
 library(viridis)
+
 # Set global options for embedding plots and choosing themes
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -27,4 +27,82 @@ scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Problem 1
+
+```{r import}
+# Import CSV and clean names
+homicide_df = read_csv(file = "./Data/homicide-data.csv") %>% 
+  janitor::clean_names()
+
+# Obtain head of raw data
+head(homicide_df)
+
+# Obtain structure of raw data
+str(homicide_df)
+```
+
+`homicide_df` is a collection of `r nrow(homicide_df)` observations on `r ncol(homicide_df)` variables from The Washington Post. Each observation represents a criminal homicide (i.e. unique victim). Key variables for each homicide include `reported_date` (reported date of homicide), demographic variables for each victim including first and last name (`victim_first` and `victim_last`, respectively), `victim_race`, `victim_age`, and `victim_sex`, as well as location of homicide in both geographical name (`city` and `state`) and coordinates (`lat` and `long`). `disposition` informs us whether a case remains open or closed, including if an arrest was or wasn't made. Data comes from `r n_distinct(pull(homicide_df, state))` states and covers the period from `r min(pull(homicide_df, reported_date))` to `r max(pull(homicide_df, reported_date))`.
+
+We can also summarize the raw data as follows, finding that 60 homicide observations are missing latitude and longitude coordinates and the 28-state data represents 50 unique cities.
+
+```{r}
+summary(homicide_df)
+
+skimr::skim(homicide_df)
+```
+
+Let's clean the data a bit, including using appropriate variable types.
+
+```{r clean data}
+# Clean the data
+homicide_df = homicide_df %>% 
+  # Change data types where warranted
+  # Not changing date using `lubridate` package because no HW analysis requires date var
+  mutate(
+    victim_age = as.numeric(victim_age),
+    victim_sex = as.factor(victim_sex),
+    state = as.factor(state)
+  ) %>% 
+  # Create `city_state` variable and remove unnecessary variables
+  mutate(
+    city_state = 
+      str_c(city, ", ", state)
+  ) %>% 
+  select(-city, -state) 
+```
+
+We want to summarize within cities to obtain the total number of homicides, and the number of unsolved homicides (with disposition "Closed without arrest" or "Open/No arrest"). We can do this as follows:
+
+```{r count homicides and unsolved homicides by city}
+# Total number of homicides by city
+total_homicides = homicide_df %>% 
+  group_by(city_state) %>% 
+  summarize(
+    num_homicides = n()
+  )
+
+# Total number of unsolved homicides by city
+homicide_df %>% 
+  filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>% 
+  group_by(city_state) %>% 
+  summarize(
+    num_unsolved_homicides = n()
+  ) %>% 
+  # Join data frame
+  full_join(total_homicides, by = "city_state") %>% 
+  # Add percent unsolved column
+  mutate(
+    perc_unsolved = round(num_unsolved_homicides*100/num_homicides, 1)
+  ) %>% 
+  # Sort by percent unsolved (ascending)
+  arrange(perc_unsolved) %>% 
+  knitr::kable(
+    col.names = c("City/State", "# of Unsolved Homicides", "Total Homicides", "% Unsolved")
+  )
+```
+
+Richmond, VA has the highest % of homicides solved, whereas Chicago has the lowest.
+
+```{r}
+
+```
 
