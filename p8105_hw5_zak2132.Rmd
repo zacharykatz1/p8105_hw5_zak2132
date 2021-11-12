@@ -28,7 +28,7 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ## Problem 1
 
-```{r import}
+```{r import, message = FALSE}
 # Import CSV and clean names
 homicide_df = read_csv(file = "./Data/homicide-data.csv") %>% 
   janitor::clean_names()
@@ -52,7 +52,7 @@ skimr::skim(homicide_df)
 
 Let's clean the data a bit, including using appropriate variable types.
 
-```{r clean data}
+```{r clean data, message = FALSE, warning = FALSE}
 # Clean the data
 homicide_df = homicide_df %>% 
   # Change data types where warranted
@@ -119,7 +119,7 @@ tidy_balt_conf %>%
 
 Now that we've done it for Baltimore, let's iterate over all cities:
 
-```{r iterate prop test}
+```{r iterate prop test, warning = FALSE}
 # Iterate over cities
 tests = homicide_df_cities %>% 
   # Apply prop_tests to each row
@@ -172,7 +172,7 @@ tests %>%
 
 We need to read in data from individual participants in our longitudinal study, with each participant's data stored in a separate file.
 
-```{r import and tidy problem 2 data}
+```{r import and tidy problem 2 data, message = FALSE, warning = FALSE}
 
 study_df = tibble(
   # Find list of paths to determine commonalities
@@ -230,7 +230,7 @@ In total, there are `r nrow(study_df)` observations, where each observation repr
 
 We'd like to create a spaghetti plot showing observations on each subject over time:
 
-```{r}
+```{r create spaghetti plot, warning = FALSE, message = FALSE}
 study_df %>% 
   ggplot(
     aes(
@@ -269,4 +269,31 @@ iris_with_missing = iris %>%
   map_df(~replace(.x, sample(1:150, 20), NA)) %>%
   mutate(Species = as.character(Species))
 ```
+
+For numeric variables, we want to fill in missing values with the mean of non-missing values, whereas for character variables, we want to fill in missing values with "virginica." Let's write a function that takes a vector as an argument, replaces missing values according to these rules, and returns the resulting vector. Then, we can apply it to the columns of `iris_with_missing` using a map statement.
+
+```{r function to replace missing values, apply to iris_with_missing}
+# Create function
+replace_missing = function(x) {
+  
+  if (is.numeric(x)) {
+    # Replace missing values with mean of non-missing values
+    replace_na(x, mean(x, na.rm = TRUE))
+  } else if (is.character(x)) {
+    replace_na(x, "virginica")
+  } else {
+    stop("Cannot be computed for non-character, non-numeric variables")
+  }
+  
+}
+
+# Apply it to iris_with_missing, ensuring we return a data frame
+iris_replaced_missing = map_df(.x = iris_with_missing, ~replace_missing(.x)) %>% 
+  knitr::kable()
+
+# Print result
+iris_replaced_missing
+```
+
+
 
