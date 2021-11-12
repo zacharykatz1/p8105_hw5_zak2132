@@ -170,3 +170,103 @@ tests %>%
 
 ## Problem 2
 
+We need to read in data from individual participants in our longitudinal study, with each participant's data stored in a separate file.
+
+```{r import and tidy problem 2 data}
+
+study_df = tibble(
+  # Find list of paths to determine commonalities
+  path = list.files("./Data/problem_2_data")
+) %>% 
+  # Iterate over paths to import data, then bind together
+  mutate(
+    participant_id = str_remove(path, ".csv"),
+    path = str_c("./Data/problem_2_data/", path),
+    data = map(path, read_csv),
+    data = map(data, bind_rows)
+  ) %>% 
+  # Glean information from file path name into each row
+  separate(participant_id, into = c("arm", "study_id", sep = "_")) %>% 
+  # Rename and factorize variable as needed
+  mutate(
+    arm = as.factor(
+      recode(
+        arm,
+        "con" = "Control",
+        "exp" = "Experimental")
+    )
+  ) %>% 
+  select(-4, -path) %>%
+  unnest(data) %>% 
+  # Reorder columns to be more suitable (identifiers up front)
+  select(study_id, arm, everything()) %>% 
+  # Tidy data by ensuring each row represents an observation
+  # Each observation is a study participant's observed data point in a given week
+  pivot_longer(
+    cols = week_1:week_8,
+    names_to = "week",
+    names_prefix = "week_",
+    values_to = "data_point"
+  ) %>% 
+  # Make week numeric
+  mutate(
+    week = as.numeric(week)
+  ) 
+
+study_df %>% 
+  head() %>% 
+  knitr::kable()
+```
+
+Our data looks nice and tidy! Let's take a quick look at the structure and summary:
+
+```{r problem 2 structure and summary}
+str(study_df)
+
+summary(study_df)
+```
+
+In total, there are `r nrow(study_df)` observations, where each observation represents a study participant's observed data value in a given week, and `r ncol(study_df)` variables, which include `study_id` (unique identifier for each participant), `arm` (factor variable for control or experimental), `week` (week observation was made), and `data_point` (observed value in study).
+
+We'd like to create a spaghetti plot showing observations on each subject over time:
+
+```{r}
+study_df %>% 
+  ggplot(
+    aes(
+      x = week,
+      y = data_point,
+      # Combine two variables into one factor
+      group = interaction(arm, study_id),
+      # Color by treatment arm
+      color = arm)
+    ) + 
+      # Increase transparency for individual lines in spaghetti plot
+      geom_line(size = 1, alpha = 0.2) +
+      # Add line of best fit for each study arm
+      geom_smooth(aes(group = as.factor(arm)), alpha = 1.5, se = FALSE) + 
+  labs(
+    title = "Observed Data Value Over Time By Participant",
+    subtitle = "Colored by Study Arm",
+    x = "Week",
+    y = "Observed Data Point",
+    color = "Study Arm"
+  )
+```
+
+In this graph, each translucent line represents one participant's recorded observation as it changes longitudinally, while the dark purple and yellow lines represent estimated conditional means over time for the control vs. experimental arms. Generally, it appears as though those in the experimental group see an increased in their observed data point by the end of eight weeks, whereas those in the control group see a mild decrease over the same study period.
+
+## Problem 3
+
+First, we want to load the `iris` dataset and introduce missing values at random in each column.
+
+```{r introduce missing iris values}
+# Set seed
+set.seed(10)
+
+# Iteratively replace with missing values
+iris_with_missing = iris %>% 
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(Species = as.character(Species))
+```
+
