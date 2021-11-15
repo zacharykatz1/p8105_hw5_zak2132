@@ -30,7 +30,7 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ```{r import, message = FALSE}
 # Import CSV and clean names
-homicide_df = read_csv(file = "./Data/homicide-data.csv") %>% 
+homicide_df = read_csv(file = "./Data/homicide-data.csv", na = c("", "Unknown")) %>% 
   janitor::clean_names()
 
 # Obtain head of raw data
@@ -56,9 +56,8 @@ Let's clean the data a bit, including using appropriate variable types.
 # Clean the data
 homicide_df = homicide_df %>% 
   # Change data types where warranted
-  # Not changing date using `lubridate` package because no HW analysis requires date var
+  # Not changing date using `lubridate` because no HW analysis requires date var
   mutate(
-    victim_age = as.numeric(victim_age),
     victim_sex = as.factor(victim_sex),
     state = as.factor(state)
   ) %>% 
@@ -73,7 +72,9 @@ homicide_df = homicide_df %>%
       disposition == "Closed by arrest" ~ "solved"
     )
   ) %>% 
-  select(-city, -state, -disposition)
+  select(-city, -state, -disposition) %>% 
+  # Filter out likely error in data entry
+  filter(city_state != "Tulsa, AL")
 ```
 
 We want to summarize within cities to obtain the total number of homicides, and the number of unsolved homicides (with disposition "Closed without arrest" or "Open/No arrest"). We can do this as follows:
@@ -145,8 +146,6 @@ Finally, let's create a plot that shows the estimates and CIs for each city, org
 
 ```{r plot unsolved estimates}
 tests %>% 
-  # Eliminate extreme outlier
-  filter(!city_state == "Tulsa, AL") %>% 
   # Generate percentages from proportions
   mutate(
     estimate = 100*estimate,
@@ -298,6 +297,5 @@ iris_replaced_missing = map_df(.x = iris_with_missing, ~replace_missing(.x)) %>%
 # Print result
 iris_replaced_missing
 ```
-
 
 
