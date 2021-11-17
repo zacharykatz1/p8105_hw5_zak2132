@@ -291,11 +291,52 @@ replace_missing = function(x) {
 }
 
 # Apply it to iris_with_missing, ensuring we return a data frame
-iris_replaced_missing = map_df(.x = iris_with_missing, ~replace_missing(.x)) %>% 
-  knitr::kable()
+iris_replaced_missing = map_df(.x = iris_with_missing, ~replace_missing(.x))
 
 # Print result
-iris_replaced_missing
+iris_replaced_missing %>% 
+  knitr::kable()
 ```
 
+We can also check if any NA values remain in the data frame:
 
+```{r Check for NAs}
+sum(is.na(iris_replaced_missing))
+```
+
+**Alternative:**
+
+Noting that the problem specifically asks us to take a vector as an argument in a function and return the "fixed" data frame column by column, we can use an alternative method as well, looping the function over each vector (column):
+
+```{r Alternative problem 3}
+# Use similar but slight variant of original function
+replace_missing = function(x) {
+  
+  if (is.numeric(x)) {
+    # Replace missing values with mean of non-missing values
+    x[is.na(x)] = mean(x, na.rm = TRUE)
+  } else if (is.character(x)) {
+    x[is.na(x)] = "virginica"
+  } else {
+    stop("Cannot be computed for non-character, non-numeric variables")
+  }
+  
+  return(x)
+}
+
+# Loop over columns (vectors)
+for (i in 1:5) {
+  
+  iris_with_missing[i] = map(iris_with_missing[i], ~replace_missing(.x))
+  
+}
+
+# Generate data frame without NAs and with replaced species
+iris_with_missing %>% 
+  knitr::kable()
+
+# Perform NA check again
+sum(is.na(iris_with_missing))
+```
+
+There are no NAs in either data frame.
