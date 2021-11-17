@@ -40,7 +40,7 @@ head(homicide_df)
 str(homicide_df)
 ```
 
-`homicide_df` is a collection of `r nrow(homicide_df)` observations on `r ncol(homicide_df)` variables from The Washington Post. Each observation represents a criminal homicide (i.e. unique victim). Key variables for each homicide include `reported_date` (reported date of homicide), demographic variables for each victim including first and last name (`victim_first` and `victim_last`, respectively), `victim_race`, `victim_age`, and `victim_sex`, as well as location of homicide in both geographical name (`city` and `state`) and coordinates (`lat` and `long`). `disposition` informs us whether a case remains open or closed, including if an arrest was or wasn't made. Data comes from `r n_distinct(pull(homicide_df, state))` states and covers the period from `r min(pull(homicide_df, reported_date))` to `r max(pull(homicide_df, reported_date))`.
+`homicide_df` is a collection of `r nrow(homicide_df)` observations on `r ncol(homicide_df)` variables from The Washington Post. Each observation represents a criminal homicide (i.e. unique victim). Key variables for each homicide include `reported_date` (reported date of homicide), demographic variables for each victim including first and last name (`victim_first` and `victim_last`, respectively), `victim_race`, `victim_age`, and `victim_sex`, as well as location of homicide in both geographical name (`city` and `state`) and coordinates (`lat` and `long`). `disposition` informs us whether a case remains open or closed, including if an arrest was or wasn't made. Data comes from `r n_distinct(pull(homicide_df, state))` states.
 
 We can also summarize the raw data as follows, finding that 60 homicide observations are missing latitude and longitude coordinates and the 28-state data represents 50 unique cities.
 
@@ -96,7 +96,7 @@ homicide_df_cities %>%
   )
 ```
 
-Chicago has the most homicides, while Tulsa (AL) has the fewest.
+Chicago, IL has the most homicides, while Tampa, FL has the fewest.
 
 We'd like to obtain the estimated proportion of homicides that are unsolved, first for Baltimore, and then for each city, along with confidence intervals for these estimates.
 
